@@ -34,23 +34,31 @@ p1 = 0
 p2 = 0
 
 memo = {}
-def many_worlds(loc, splitters, end):
-   
+def many_worlds(loc, splitters, end, visited=set(), from_=None):
     x,y = loc
     while (x,y) not in splitters and y < end:
         y = y + 1
 
     if loc in memo:
         return memo
-
+    
+    if (x,y) in visited:
+        return 0
+    
     if y >= end:
         memo[(x,y)] = 1
-        print("end", (x,y))
+        #print("end", (x,y))
         return 1
     
+    visited.add((x,y))
     # go left
     assert (x,y) in splitters
-    res = many_worlds((x-1,y), splitters, end) + many_worlds((x+1,y), splitters, end)
+    res = 0
+    if (x-1,y) not in visited:
+        res += many_worlds((x-1,y), splitters, end, set(visited), (x,y))
+    if (x+1,y) not in visited:
+        res += many_worlds((x+1,y), splitters, end, set(visited), (x,y))
+    memo[from_] = res
     memo[(x,y)] = res
     return res
     
@@ -68,7 +76,7 @@ with open("day7.txt") as file:
             elif ch == "^":
                 splitters.add((x,y))
 
-    beams = defaultdict(list)
+    beams = {start:1}
     max_y = start[1]
     while max_y < len(lines):
         next_beams = {}
@@ -78,8 +86,8 @@ with open("day7.txt") as file:
             max_y = y
             if (x,y) in splitters:
                 p1 += 1
-                next_beams[(x-1, y)].append(beam)
-                next_beams[(x+1, y)].append(beam)
+                next_beams[(x-1, y)] = 1
+                next_beams[(x+1, y)] = 1
             else:
                 next_beams[(x,y)] = None
             
@@ -87,23 +95,23 @@ with open("day7.txt") as file:
         beams = next_beams
     answer(p1)
 
-    G = nx.DiGraph()    
-    max_y = start[1]
-    while max_y < len(lines):
-        next_beams = {}
-        for beam in beams:
-            x,y = beam
-            y = y+1
-            max_y = y
-            if (x,y) in splitters:
-                p1 += 1
-                next_beams[(x-1, y)] = 1
-                next_beams[(x+1, y)] = 1
-            else:
-                next_beams[(x,y)] = 1
+    # G = nx.DiGraph()    
+    # max_y = start[1]
+    # while max_y < len(lines):
+    #     next_beams = {}
+    #     for beam in beams:
+    #         x,y = beam
+    #         y = y+1
+    #         max_y = y
+    #         if (x,y) in splitters:
+    #             p1 += 1
+    #             next_beams[(x-1, y)] = 1
+    #             next_beams[(x+1, y)] = 1
+    #         else:
+    #             next_beams[(x,y)] = 1
             
-        #p1 += len(next_beams) - len(beams)
-        beams = next_beams
+    #     #p1 += len(next_beams) - len(beams)
+    #     beams = next_beams
 
     answer(many_worlds(start, splitters, len(lines)))
 
