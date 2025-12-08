@@ -1,12 +1,9 @@
 from aoc_helper import *
-from collections import defaultdict
-from math import sqrt
+from collections import Counter
 import heapq
 
-p1 = 0
-p2 = 0
-
 def straight_line_dist(p1, p2):
+    # ignore sqrt as it's not needed for this
     return (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2 + (p1[2] - p2[2])**2
     
 #with open("test.txt") as file:
@@ -14,18 +11,19 @@ with open("day8.txt") as file:
     lines = file.read().strip().splitlines()
     
     boxes = []
-    for l in lines:
-        x,y,z = nums(l)
-        boxes.append((x,y,z))
+    for line in lines:
+        boxes.append(tuple(nums(line)))
     
+    # Pre-compute all distances between junction boxes and store them
+    # in a priority Q
     distance_q = []
-
-    MAX = len(boxes)**8
     for i in range(len(boxes)-1):
         for j in range(i+1, len(boxes)):
             heapq.heappush(distance_q, (straight_line_dist(boxes[i], boxes[j]), boxes[i], boxes[j]))
 
-    graph = defaultdict(list)
+    # To track a circuit we'll just assign a circuit number to the node. Two nodes with the same
+    # circuit number are connected.
+    # Also track who's connected for easy lookup
     circuits = {}
     connected = set()
     next_circuit_num = 1
@@ -42,40 +40,29 @@ with open("day8.txt") as file:
                 if circuits[box] == merge_val:
                     circuits[box] = val
         elif n1 in circuits:
-            assert n2 not in circuits
+            # add n2 to n1's circuit
             circuits[n2] = circuits[n1]
         elif n2 in circuits:
-            assert n1 not in circuits
+            # add n1 to n2's circuit
             circuits[n1] = circuits[n2]
         else:
+            # new connection, new circuit
             circuits[n1] = next_circuit_num
             circuits[n2] = next_circuit_num
             next_circuit_num += 1
 
-    # needs to take into consideration the connectedness of them
-
     match = 0
-    while match < 1000:
-        dist, b1, b2 = heapq.heappop(distance_q)
-        print(b1, b2)
+    dist, box1, box2 = 0, 0, 0
+    while len(circuits) < len(boxes) or len(set(circuits.values())) != 1:
+        dist, box1, box2 = heapq.heappop(distance_q)
 
-        if (b1,b2) in connected: #circuits.get(b1, -1) == circuits.get(b1, -1):
+        if (box1,box2) in connected:
             continue
-        # graph[min_row].append(min_col)
-        # graph[min_col].append(min_row)
-        update_circuit(b1, b2, circuits)
+
+        update_circuit(box1, box2, circuits)
         match += 1
 
-    val_counts = defaultdict(int)
-    for node in circuits:
-        val_counts[circuits[node]] += 1
-
-    #m1, m2, m3 = sorted([len(graph[x]) for x in graph], reverse=True)[:3]
-    m1, m2, m3 = sorted(val_counts.values(), reverse=True)[:3]
-    p1 = m1 * m2 * m3
-    print(m1,m2,m3)
-    answer(p1)
-    # print(graph)
-
-    # print(circuits)
-    # print(val_counts)
+        if match == 1000:            
+            m1, m2, m3 = Counter(circuits.values()).most_common(3)
+            answer(m1[1]*m2[1]*m3[1])
+    answer(box1[0] * box2[0])
