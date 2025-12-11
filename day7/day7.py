@@ -18,7 +18,7 @@ def many_worlds(loc, splitters, end):
         result = many_worlds((x-1,y), splitters, end) + many_worlds((x+1,y), splitters, end)
     memo[(x,y)] = result
     return result
-    
+
 
 #with open("test.txt") as file:
 with open("day7.txt") as file:
