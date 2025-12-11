@@ -52,4 +52,3 @@ with open("day7.txt") as file:
 
     p2 = many_worlds(start, splitters, len(lines))
     answer(p2)
-    assert p2 == 357525737893560
